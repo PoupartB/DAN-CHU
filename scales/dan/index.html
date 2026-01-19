@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>DAN — Douleur aiguë du nouveau-né</title>
+  <style>
+    body{font-family:Arial,sans-serif;margin:0;background:#f6f7f9;color:#111}
+    .wrap{max-width:1100px;margin:0 auto;padding:20px}
+    a{color:#111}
+    .topbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+    .badge{display:inline-block;padding:6px 10px;border:1px solid #ddd;border-radius:999px;background:#fff;font-size:14px}
+    .note{opacity:.85;margin:8px 0 14px}
+    table{width:100%;border-collapse:collapse;background:#fff;border:1px solid #e7e7e7;border-radius:12px;overflow:hidden}
+    th,td{border-bottom:1px solid #eee;padding:10px;vertical-align:top}
+    th{background:#fafafa;text-align:left}
+    .itemtitle{font-weight:700;margin-bottom:6px}
+    .small{font-size:14px;opacity:.85}
+    .opt{display:flex;gap:8px;align-items:flex-start;margin:6px 0}
+    .opt input{margin-top:3px}
+    .scores{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:14px 0}
+    .scorebox{background:#fff;border:1px solid #e7e7e7;border-radius:12px;padding:12px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+    .scorebox .label{opacity:.75;font-size:13px;margin-bottom:6px}
+    .scorebox .value{font-size:22px;font-weight:800}
+    .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+    button{padding:10px 12px;border-radius:10px;border:1px solid #ddd;background:#fff;cursor:pointer}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <a href="../../">← Retour accueil</a>
+      <span class="badge">Douleur aiguë</span>
+      <span class="badge">Naissance – 3 mois</span>
+    </div>
+
+    <h1>Échelle DAN — Douleur Aiguë du Nouveau-né</h1>
+    <p class="note">Score 0–10 : Réponses faciales (0–4) + Mouvements des membres (0–3) + Expression vocale (0–3). Évaluation possible avant / pendant / après le soin.</p>
+
+    <div class="scores">
+      <div class="scorebox"><div class="label">Avant le soin</div><div class="value" id="scoreAvant">—</div></div>
+      <div class="scorebox"><div class="label">Pendant le soin</div><div class="value" id="scorePendant">—</div></div>
+      <div class="scorebox"><div class="label">Après le soin</div><div class="value" id="scoreApres">—</div></div>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Items</th><th>Avant</th><th>Pendant</th><th>Après</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            <div class="itemtitle">Réponses faciales (0–4)</div>
+            <div class="small">
+              0: calme<br>
+              1: pleurniche avec alternance fermeture/ouverture douce des yeux<br><br>
+              Signes (paupières, sourcils, sillons naso-labiaux) :<br>
+              2: légers, intermittents, retour au calme<br>
+              3: modérés<br>
+              4: très marqués, permanents
+            </div>
+          </td>
+          <td id="facial_avant"></td><td id="facial_pendant"></td><td id="facial_apres"></td>
+        </tr>
+
+        <tr>
+          <td>
+            <div class="itemtitle">Mouvements des membres (0–3)</div>
+            <div class="small">
+              0: calmes ou mouvements doux<br><br>
+              Signes (pédalage, orteils, MI raides/surélevés, agitation bras, retrait) :<br>
+              1: légers, intermittents, retour au calme<br>
+              2: modérés<br>
+              3: très marqués, permanents
+            </div>
+          </td>
+          <td id="membres_avant"></td><td id="membres_pendant"></td><td id="membres_apres"></td>
+        </tr>
+
+        <tr>
+          <td>
+            <div class="itemtitle">Expression vocale (0–3)</div>
+            <div class="small">
+              0: absence de plainte<br>
+              1: gémit brièvement (intubé : semble inquiet)<br>
+              2: cris intermittents (intubé : mimique de cris intermittents)<br>
+              3: cris longue durée / hurlement constant (intubé : mimique de cris constants)
+            </div>
+          </td>
+          <td id="vocale_avant"></td><td id="vocale_pendant"></td><td id="vocale_apres"></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="actions">
+      <button type="button" id="resetBtn">Réinitialiser</button>
+      <button type="button" id="printBtn">Imprimer</button>
+    </div>
+  </div>
+
+  <script>
+    const cells = [
+      ["facial_avant", 0,1,2,3,4], ["facial_pendant", 0,1,2,3,4], ["facial_apres", 0,1,2,3,4],
+      ["membres_avant", 0,1,2,3], ["membres_pendant", 0,1,2,3], ["membres_apres", 0,1,2,3],
+      ["vocale_avant", 0,1,2,3], ["vocale_pendant", 0,1,2,3], ["vocale_apres", 0,1,2,3],
+    ];
+
+    function renderRadios(id, values){
+      const td = document.getElementById(id);
+      td.innerHTML = values.map(v => `
+        <label class="opt"><input type="radio" name="${id}" value="${v}"> ${v}</label>
+      `).join("");
+    }
+    cells.forEach(([id, ...vals]) => renderRadios(id, vals));
+
+    function get(name){
+      const el = document.querySelector(\`input[name="\${name}"]:checked\`);
+      return el ? parseInt(el.value,10) : null;
+    }
+    function score(prefix){
+      const a = get(\`facial_\${prefix}\`);
+      const b = get(\`membres_\${prefix}\`);
+      const c = get(\`vocale_\${prefix}\`);
+      if (a===null || b===null || c===null) return null;
+      return a+b+c;
+    }
+    function refresh(){
+      const sA = score("avant"), sP = score("pendant"), sAp = score("apres");
+      document.getElementById("scoreAvant").textContent = (sA===null) ? "—" : sA;
+      document.getElementById("scorePendant").textContent = (sP===null) ? "—" : sP;
+      document.getElementById("scoreApres").textContent = (sAp===null) ? "—" : sAp;
+    }
+    document.addEventListener("change", (e) => {
+      if (e.target && e.target.matches('input[type="radio"]')) refresh();
+    });
+    document.getElementById("resetBtn").addEventListener("click", () => {
+      document.querySelectorAll('input[type="radio"]:checked').forEach(r => r.checked = false);
+      refresh(); window.scrollTo({top:0,behavior:"smooth"});
+    });
+    document.getElementById("printBtn").addEventListener("click", () => window.print());
+    refresh();
+  </script>
+</body>
+</html>
